@@ -269,13 +269,13 @@ void ExecuteSequence(int fd, const std::vector<Action>& seq, const TimingSetting
 // ----------------------------
 
 int main() {
-    std::cout << "Linux Hotkey Macro App\n";
+    std::cout << "Helldivers 2 Linux Hotkey Macro App\n";
 
     int fd = SetupUInput();
 
-    std::thread(ListenKeyboard, "/dev/input/event2").detach();
+    std::thread(ListenKeyboard, "/dev/input/event2").detach(); // manually defining keyboard to listen to. this needs auto detect
 
-    auto hotkeys = LoadHotkeysFromCSV("hotkeys.csv");
+    auto hotkeys = LoadHotkeysFromCSV("HotKeys.csv");
     TimingSettings ts;
 
     while (true) {
