@@ -4,7 +4,7 @@ A lightweight Linux-native hotkey listener and key sequence playback tool, desig
 
 ## ✨ What it does
 
-This program listens for a custom hotkey and simulates a predefined sequence of key presses for stratagems.
+This program listens for a custom hotkey combination presses and plays back a predefined sequence of key presses for stratagems.
 
 ### Example
 
@@ -20,8 +20,9 @@ Useful for quickly executing stratagems input sequences.
 
 ## 🐧 Platform
 
-* Linux (tested on X11)
-* May not work on Wayland without additional configuration
+* Linux (tested on Wayland)
+* Initial build on Debian 13.2 Wayland KDE Plasma
+
 
 ---
 
@@ -50,9 +51,13 @@ g++ main.cpp -o helldivers2hotkey2
 
 ## 🔧 Configuration
 
-Currently loaded via HotKeys.csv in current directory.
+Currently loaded via files in current directory.
 
 Example:
+
+1. HotKeys.csv
+
+this handles mapings for keyboard presses to playback sequences.
 
 ```csv
 // Example mapping
@@ -61,7 +66,7 @@ ALT+SHIFT,0,100,Resupply,CTRL_DOWN,DOWN,DOWN,UP,RIGHT,CTRL_UP
 In this example, pressing the keyboard combination ALT+SHIFT+0, would result in the playback of e follwing key sequence; Hold Down CTRL, DOWN,DOWN,UP,RIGHT, and Relase CTRL, calling in the Resupply stratagem.
 The 0,100 was an early attempt at fixing key press timings, which were later implemtned and replaced by 'settings.cfg.
 
-settings.cfg
+2. settings.cfg
 
 This handles the key press timings and playback speeds in milliseconds delays.
 
@@ -73,9 +78,11 @@ postReleaseMs=80
 
 ---
 
-## Testing envinment notes
+## Development History
 
-Initial build on Debian 13.2 Wayland KDE Plasma
+Orginally a Windows 11 Visual Studio c++ console appliction project being converted/rebuilt for native linux use.
+
+It's initial Linux native build is not yet functional. (March 2026)
 
 
 ---
@@ -91,9 +98,10 @@ Ideas:
 * Wayland compatibility
 * UI (CLI or minimal GUI)
 * Better keyboard detection. 
+* Currently needs sudo. would prefer not to require that.
 
 ---
 
 ## 📜 License
 
-MIT License (see LICENSE file)
+MIT License (see LICENSE.txt file)

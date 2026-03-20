@@ -1,0 +1,7 @@
+# Ignore compiled binaries
+*.o
+helldivers2hotkey2
+
+# Ignore editor temporary files
+*~
+*.swp
