@@ -276,6 +276,12 @@ int main() {
     std::thread(ListenKeyboard, "/dev/input/event2").detach(); // manually defining keyboard to listen to. this needs auto detect
 
     auto hotkeys = LoadHotkeysFromCSV("HotKeys.csv");
+
+    /*
+     *  add/show a list of loaded hotkeys and timing settings.
+     *
+     */
+
     TimingSettings ts;
 
     while (true) {
