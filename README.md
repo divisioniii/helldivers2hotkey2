@@ -3,6 +3,7 @@
 A lightweight Linux-native hotkey listener and key sequence playback tool, designed to assist with input sequences in Helldivers 2.
 
 At this time it is a work-in-progress conversion from its functional Windows code version. It is currently not fuctional.
+See /src/windows/ for the functional windows source version.
 
 ## ✨ What it does
 
