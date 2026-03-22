@@ -1,6 +1,8 @@
-# helldivers2hotkey2
+# helldivers2hotkey2 (WIP Conversion)
 
 A lightweight Linux-native hotkey listener and key sequence playback tool, designed to assist with input sequences in Helldivers 2.
+
+At this time it is a work-in-progress conversion from its functional Windows code version. It is currently not fuctional.
 
 ## ✨ What it does
 
