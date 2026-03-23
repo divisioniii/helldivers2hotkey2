@@ -2,8 +2,8 @@
 
 A lightweight Linux-native hotkey listener and key sequence playback tool, designed to assist with input sequences in Helldivers 2.
 
-At this time it is a work-in-progress conversion from its functional Windows code version. It is currently not fuctional.
-See /src/windows/ for the functional windows source version.
+At this time it is a work-in-progress conversion from its functional Windows code version. It is currently not release ready.
+* See /src/windows/ for the functional windows source version.
 
 ## ✨ What it does
 
@@ -33,21 +33,33 @@ Useful for quickly executing stratagems input sequences.
 
 Requirements:
 
+* libinput → event stream
+* xkbcommon → key translation
+* (apt install libinput-dev libudev-dev libxkbcommon-dev)
+
 * g++
 * make (optional)
 
 Compile:
 
 ```bash
-g++ main.cpp -o helldivers2hotkey2
+g++ -std=c++17 HellDiver2HotKey2.cpp -o HellDiver2HotKey2 -linput -ludev -lxkbcommon
 ```
+
+Permissions:
+
+```bash
+sudo modprobe uinput
+sudo chmod 666 /dev/uinput
+```
+
 
 ---
 
 ## ▶️ Run
 
 ```bash
-./helldivers2hotkey2
+sudo ./helldivers2hotkey2
 ```
 
 ---
@@ -63,8 +75,10 @@ Example:
 this handles mapings for keyboard presses to playback sequences.
 
 ```csv
-// Example mapping
-ALT+SHIFT,0,100,Resupply,CTRL_DOWN,DOWN,DOWN,UP,RIGHT,CTRL_UP
+Modifier,TriggerKey,Descriptor,MacroSequence
+ALT+SHIFT,0,"Resupply",DOWN,DOWN,DOWN,UP,RIGHT
+ALT+SHIFT,1,"Orbital Barrage",RIGHT,DOWN,LEFT,UP,UP
+ALT+SHIFT,9,"Mortar Sentry",DOWN,UP,RIGHT,RIGHT,DOWN
 ```
 In this example, pressing the keyboard combination ALT+SHIFT+0, would result in the playback of e follwing key sequence; Hold Down CTRL, DOWN,DOWN,UP,RIGHT, and Relase CTRL, calling in the Resupply stratagem.
 The 0,100 was an early attempt at fixing key press timings, which were later implemtned and replaced by 'settings.cfg.
@@ -74,9 +88,10 @@ The 0,100 was an early attempt at fixing key press timings, which were later imp
 This handles the key press timings and playback speeds in milliseconds delays.
 
 ```
-modifierHoldMs=150
-keyHoldMs=100
-postReleaseMs=80
+ModifierToHold=150       # optional additional modifier (like LEFTCTRL)
+KeyHoldMs=100            # how long each macro key is held
+PostReleaseMs=80         # delay after key release before next key
+
 ```
 
 ---
@@ -85,7 +100,7 @@ postReleaseMs=80
 
 Orginally a Windows 11 Visual Studio c++ console appliction project being converted/rebuilt for native linux use.
 
-It's initial Linux native build is not yet functional. (March 2026)
+It's initial Linux native build is not yet release reasdy. (March 2026)
 
 
 ---
