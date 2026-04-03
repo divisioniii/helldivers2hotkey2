@@ -20,6 +20,8 @@ Requirements:
 
 Complie in your Windows compiler of choice.
 
+Turn off Windows hotkey combination for langhuage selection (CTRL+SHIFT) in windows language settings
+
 ▶️ Run
 cmd: helldivers2hotkey2.exe
 🔧 Configuration
