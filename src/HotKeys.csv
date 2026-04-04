@@ -1,6 +1,6 @@
 #  https://www.corsair.com/us/en/explorer/gamer/keyboards/helldivers-2-stratagem-codes-complete-list/
 Modifier,TriggerKey,Descriptor,MacroSequence
-ALT+SHIFT,0,Resupply",DOWN,DOWN,UP,RIGHT
+ALT+SHIFT,0,"Resupply",DOWN,DOWN,UP,RIGHT
 ALT+SHIFT,1,"Orbital Gatling Barrage",RIGHT,DOWN,LEFT,UP,UP
 ALT+SHIFT,2,"Eagle One Straifing Run",UP,RIGHT,RIGHT,RIGHT
 ALT+SHIFT,3,"EAST-17 Expendable Anti-Tank",DOWN,DOWN,LEFT,UP,RIGHT
