@@ -194,10 +194,14 @@ int main() {
     names.rules  = getenv("XKB_DEFAULT_RULES");
     names.model  = getenv("XKB_DEFAULT_MODEL");
     names.layout = getenv("XKB_DEFAULT_LAYOUT");
+    names.variant = getenv("XKB_DEFAULT_VARIANT");
+    names.options = getenv("XKB_DEFAULT_OPTIONS");
 
     if (!names.rules)  names.rules  = "evdev";
     if (!names.model)  names.model  = "pc105";
     if (!names.layout) names.layout = "us";
+    if (!names.variant) names.variant = "";
+    if (!names.options) names.options = "";
 
     struct xkb_keymap *keymap = xkb_keymap_new_from_names(ctx, &names, XKB_KEYMAP_COMPILE_NO_FLAGS);
     struct xkb_state *state = xkb_state_new(keymap);
