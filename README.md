@@ -99,27 +99,34 @@ KERNEL=="event*", MODE="0660", GROUP="input"
 
 Add user to input group:
 
+```bash
 sudo usermod -aG input $USER
+```
 
 Then reboot or re-login.
+
 
 ⌨️ Finding your keyboard device
 
 List devices:
 
+```bash
 ls -l /dev/input/by-id/
+```
 
 Example output:
 
+```bash
 usb-413c_Dell_KB216_Wired_Keyboard-event-kbd -> ../event3
+```
 
 Use this in config:
 
+```bash
 device=/dev/input/event3
+```
 
-or preferably:
 
-device=/dev/input/by-id/usb-413c_Dell_KB216_Wired_Keyboard-event-kbd
 ⚙️ Configuration
 
 Create a file named config.txt:
@@ -138,11 +145,12 @@ macro F11: RIGHT DOWN LEFT UP UP, "F11 - Orbital Gatling Barrage"
 ```
 
 
-Format
-macro <TRIGGER_KEY>: <SEQUENCE>, "<NAME>"
-TRIGGER_KEY → F1–F12 supported
-SEQUENCE → UP, DOWN, LEFT, RIGHT
-NAME → displayed in terminal logs
+Format Example
+
+* macro <TRIGGER_KEY>: <SEQUENCE>, "<NAME>"
+* TRIGGER_KEY → F1–F12 supported
+* SEQUENCE → UP, DOWN, LEFT, RIGHT
+* NAME → displayed in terminal logs
 
 
 🚀 Build
@@ -184,11 +192,14 @@ Trigger: F8 - SA/MG-43 Machine Sentry
 * No global hotkey interception via Wayland (by design)
 * Device must be manually selected
 
+
 🔮 Future ideas
 * Pending
 
+
 🤝 Contributing
 *Contributions are welcome.
+
 
 📜 License
 
