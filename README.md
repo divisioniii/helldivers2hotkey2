@@ -178,27 +178,29 @@ Listening...
 Trigger: F10 - Resupply
 Trigger: F8 - SA/MG-43 Machine Sentry
 ```
-
+It is advised to avoid using F1-F5, F12 as these are in use by the game.
+Set your own stratagem maco choices. see; 
+* https://www.corsair.com/us/en/explorer/gamer/keyboards/helldivers-2-stratagem-codes-complete-list/
 
 ⚠️ Notes
 * Works on Wayland via kernel-level input injection (uinput)
-* Some sandboxed applications (Flatpak/Snap) may ignore synthetic input
-* Anti-cheat systems in games may block or flag injected input
-* Requires access to raw input devices (/dev/input/event*)
+* Some sandboxed applications (Flatpak/Snap) may or may not ignore synthetic input (untested)
+* Anti-cheat systems in games may block or flag injected input. Helldivers1 is ok with it (Tested ok)
+* Requires access to raw input devices (/dev/input/event*) as noted above
 
-🧩 Limitations
+🧩 Limitations / Design Choices
 * No GUI (CLI only)
 * No hot-reload (restart required for config changes)
 * No global hotkey interception via Wayland (by design)
-* Device must be manually selected
+* Keyboard Device must be manually selected (For now)
 
 
 🔮 Future ideas
-* Pending
+* Pending Auto detection for main/default keyboard
 
 
 🤝 Contributing
-*Contributions are welcome.
+* Contributions are welcome.
 
 
 📜 License
