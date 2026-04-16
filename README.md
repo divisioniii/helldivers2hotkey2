@@ -153,6 +153,13 @@ Format Example
 * NAME → displayed in terminal logs
 
 
+⚙️ Game configuration settings
+* This tool with assume you've got the stratgem call in keybinds in the game set to CTRL HOLD.
+eg, to manually call a stratagem, you would hold down CTRL while pressing your desired arrow key combo.
+This tool wil handle the CTRL HOLD while performing the arrow combination hotkeys as defined above.
+
+
+
 🚀 Build
 ```bash
 g++ -O2 -std=c++17 Helldivers2Hotkey2.cpp -o Helldivers2Hotkey2
