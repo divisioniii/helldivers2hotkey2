@@ -1,0 +1,10 @@
+# keyboard device
+device=/dev/input/event3
+
+# macros
+macro F6: DOWN UP LEFT UP RIGHT DOWN, "F6 - AX/AR-23 Guard Dog"
+macro F7: DOWN DOWN LEFT UP RIGHT, "F7 - EAST-17 Expendable Anti-Tank"
+macro F8: DOWN UP RIGHT RIGHT UP, "F8 - SA/MG-43 Machine Sentry"
+macro F9: DOWN UP RIGHT RIGHT DOWN, "F9 - A/M-12 Mortar Sentry"
+macro F10: DOWN DOWN UP RIGHT, "F10 - Resupply"
+macro F11: RIGHT DOWN LEFT UP UP, "F11 - Orbital Gatling Barrage"

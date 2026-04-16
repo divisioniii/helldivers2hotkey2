@@ -2,49 +2,77 @@
 
 A lightweight Linux-native hotkey listener and key sequence playback tool, designed to assist with input sequences in Helldivers 2.
 
-At this time it is a work-in-progress conversion from its functional Windows code version. It is currently not release ready.
+At this time it is a work-in-progress conversion from its functional Windows code version. 
+It is currently functional and in testing and tuning phase as at 16 April 2026.
 * See /src/windows/ for the functional windows source version.
 
 ## ✨ What it does
 
 This program listens for a custom hotkey combination presses and plays back a predefined sequence of key presses for stratagems.
 
-### Example
 
-Press:
-ALT + SHIFT + 5
 
-Simulates:
-UP → DOWN → DOWN → LEFT → LEFT
+A lightweight native Linux C++ macro engine that captures keyboard input from `/dev/input` and plays back configurable macros using `/dev/uinput`.
 
-Useful for quickly executing stratagems input sequences.
+Designed to work on **Wayland and X11** without relying on desktop environment APIs.
 
 ---
 
-## 🐧 Platform
+## ✨ Features
 
-* Linux (tested on Wayland)
-* Initial build on Debian 13.2 Wayland KDE Plasma
+- 🎮 Global keyboard trigger support (Linux input subsystem)
+- ⚙️ Configurable macros via simple text file
+- ⌨️ Supports arrow-key sequences + modifiers (CTRL wrapper)
+- 🏷️ Human-readable macro names
+- ⚡ Low-latency input injection using `/dev/uinput`
+- 🧵 Non-blocking playback (threaded execution)
+- 🪶 No external dependencies
+
+---
+
+## 🧠 How it works
+
+The program:
+
+1. Reads raw keyboard input from `/dev/input/eventX`
+2. Matches configured trigger keys (e.g. F6, F12)
+3. Injects synthetic input events via `/dev/uinput`
+4. Wraps all macro sequences in:
+
+CTRL down → sequence → CTRL up
 
 
 ---
 
-## ⚙️ Build
 
-Requirements:
+🐧 Platform
+Linux (tested on Wayland)
+Initial build on Debian 13.2 Wayland KDE Plasma
 
-* libinput → event stream
-* xkbcommon → key translation
-* (apt install libinput-dev libudev-dev libxkbcommon-dev)
+---
 
-* g++
-* make (optional)
+## 📦 Requirements
 
-Compile:
+### Build dependencies
+- `g++` (C++17 or newer)
+- Linux build tools
+
+Install on Debian 13:
 
 ```bash
-g++ -std=c++17 HellDiver2HotKey2.cpp -o HellDiver2HotKey2 -linput -ludev -lxkbcommon
-```
+sudo apt install build-essential
+Runtime requirements
+Linux kernel with input subsystem enabled
+Access to:
+/dev/input/event*
+/dev/uinput
+
+
+🔐 Permissions setup
+Option 1 (quick test)
+sudo ./Helldivers2Hotkey2
+Option 2 (recommended)
+
 
 Permissions:
 
@@ -53,73 +81,112 @@ sudo modprobe uinput
 sudo chmod 666 /dev/uinput
 ```
 
+or
 
----
+Create udev rules:
 
-## ▶️ Run
+sudo nano /etc/udev/rules.d/99-uinput.rules
 
+Add:
+
+KERNEL=="uinput", MODE="0660", GROUP="input"
+KERNEL=="event*", MODE="0660", GROUP="input"
+
+Add user to input group:
+
+sudo usermod -aG input $USER
+
+Then reboot or re-login.
+
+⌨️ Finding your keyboard device
+
+List devices:
+
+ls -l /dev/input/by-id/
+
+Example output:
+
+usb-413c_Dell_KB216_Wired_Keyboard-event-kbd -> ../event3
+
+Use this in config:
+
+device=/dev/input/event3
+
+or preferably:
+
+device=/dev/input/by-id/usb-413c_Dell_KB216_Wired_Keyboard-event-kbd
+⚙️ Configuration
+
+Create a file named config.txt:
+
+...
+# keyboard device
+device=/dev/input/event3
+
+# macros (Avoid game related F key presets)
+macro F6: DOWN UP LEFT UP RIGHT DOWN, "F6 - AX/AR-23 Guard Dog"
+macro F7: DOWN DOWN LEFT UP RIGHT, "F7 - EAST-17 Expendable Anti-Tank"
+macro F8: DOWN UP RIGHT RIGHT UP, "F8 - SA/MG-43 Machine Sentry"
+macro F9: DOWN UP RIGHT RIGHT DOWN, "F9 - A/M-12 Mortar Sentry"
+macro F10: DOWN DOWN UP RIGHT, "F10 - Resupply"
+macro F11: RIGHT DOWN LEFT UP UP, "F11 - Orbital Gatling Barrage"
+...
+
+
+Format
+macro <TRIGGER_KEY>: <SEQUENCE>, "<NAME>"
+TRIGGER_KEY → F1–F12 supported
+SEQUENCE → UP, DOWN, LEFT, RIGHT
+NAME → displayed in terminal logs
+
+
+🚀 Build
 ```bash
-sudo ./helldivers2hotkey2
+g++ -O2 -std=c++17 Helldivers2Hotkey2.cpp -o Helldivers2Hotkey2
 ```
 
----
 
-## 🔧 Configuration
+▶️ Run
+./Helldivers2Hotkey2
 
-Currently loaded via files in current directory.
+🖥️ Example output
+Loaded device: /dev/input/event3
+Macro loaded: F6 - AX/AR-23 Guard Dog (6 steps)
+Macro loaded: F7 - EAST-17 Expendable Anti-Tank (5 steps)
+Macro loaded: F8 - SA/MG-43 Machine Sentry (5 steps)
+Macro loaded: F9 - A/M-12 Mortar Sentry (5 steps)
+Macro loaded: F10 - Resupply (4 steps)
+Macro loaded: F11 - Orbital Gatling Barrage (5 steps)
 
-Example:
-
-1. HotKeys.csv
-
-this handles mapings for keyboard presses to playback sequences.
-
-```csv
-Modifier,TriggerKey,Descriptor,MacroSequence
-ALT+SHIFT,0,"Resupply",DOWN,DOWN,DOWN,UP,RIGHT
-ALT+SHIFT,1,"Orbital Barrage",RIGHT,DOWN,LEFT,UP,UP
-ALT+SHIFT,9,"Mortar Sentry",DOWN,UP,RIGHT,RIGHT,DOWN
-```
-In this example, pressing the keyboard combination ALT+SHIFT+0, would result in the playback of e follwing key sequence; Hold Down CTRL, DOWN,DOWN,UP,RIGHT, and Relase CTRL, calling in the Resupply stratagem.
-The 0,100 was an early attempt at fixing key press timings, which were later implemtned and replaced by 'settings.cfg.
-
-2. settings.cfg
-
-This handles the key press timings and playback speeds in milliseconds delays.
-
-```
-ModifierToHold=150       # optional additional modifier (like LEFTCTRL)
-KeyHoldMs=100            # how long each macro key is held
-PostReleaseMs=80         # delay after key release before next key
-
-```
-
----
-
-## Development History
-
-Orginally a Windows 11 Visual Studio c++ console appliction project being converted/rebuilt for native linux use.
-
-It's initial Linux native build is not yet release reasdy. (March 2026)
+Listening...
+Trigger: F10 - Resupply
+Trigger: F8 - SA/MG-43 Machine Sentry
 
 
----
 
+⚠️ Notes
+Works on Wayland via kernel-level input injection (uinput)
+Some sandboxed applications (Flatpak/Snap) may ignore synthetic input
+Anti-cheat systems in games may block or flag injected input
+Requires access to raw input devices (/dev/input/event*)
 
-## 🤝 Contributing
+🧩 Limitations
+No GUI (CLI only)
+No hot-reload (restart required for config changes)
+No global hotkey interception via Wayland (by design)
+Device must be manually selected
 
+🔮 Future ideas
+JSON/TOML config support
+Sequence-based triggers (no F-keys required)
+GUI frontend (ImGui / Qt)
+Macro recording mode
+Multi-device support
+
+🤝 Contributing
 Contributions are welcome.
 
-Ideas:
+📜 License
 
-* X11 Support or not
-* Wayland compatibility
-* UI (CLI or minimal GUI)
-* Better keyboard detection. 
-* Currently needs sudo. would prefer not to require that.
+MIT License  (see LICENSE.txt file)
 
----
-
-## 📜 License
-
-MIT License (see LICENSE.txt file)

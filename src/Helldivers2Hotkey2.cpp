@@ -1,255 +1,240 @@
-#include <iostream>
-#include <libinput.h>
-#include <libudev.h>
-#include <unistd.h>
 #include <fcntl.h>
-#include <xkbcommon/xkbcommon.h>
+#include <linux/input.h>
 #include <linux/uinput.h>
+#include <unistd.h>
 #include <cstring>
-
-#include <unordered_set>
-#include <unordered_map>
+#include <iostream>
 #include <vector>
+#include <map>
 #include <fstream>
 #include <sstream>
 #include <thread>
-#include <chrono>
 
-// -----------------------------
-// libinput callbacks
-// -----------------------------
-static int open_restricted(const char *path, int flags, void *user_data) {
-    int fd = open(path, flags);
-    if (fd < 0) perror("open");
-    return fd;
+// ---------- CONFIG ----------
+std::string inputDevice;
+
+// ---------- MACRO STRUCT ----------
+struct Macro {
+    std::vector<int> sequence;
+    std::string name;
+};
+
+std::map<int, Macro> macros;
+
+// ---------- KEY MAP ----------
+std::map<std::string, int> keyMap = {
+    {"UP", KEY_UP},
+    {"DOWN", KEY_DOWN},
+    {"LEFT", KEY_LEFT},
+    {"RIGHT", KEY_RIGHT},
+
+    {"F1", KEY_F1}, {"F2", KEY_F2}, {"F3", KEY_F3},
+    {"F4", KEY_F4}, {"F5", KEY_F5}, {"F6", KEY_F6},
+    {"F7", KEY_F7}, {"F8", KEY_F8}, {"F9", KEY_F9},
+    {"F10", KEY_F10}, {"F11", KEY_F11}, {"F12", KEY_F12}
+};
+
+// ---------- EMIT ----------
+void emit(int fd, int type, int code, int val) {
+    input_event ie{};
+    ie.type = type;
+    ie.code = code;
+    ie.value = val;
+    write(fd, &ie, sizeof(ie));
 }
 
-static void close_restricted(int fd, void *user_data) { close(fd); }
+// ---------- PLAYBACK ----------
+void playMacro(int uinput_fd, const std::vector<int>& sequence) {
+    const int CTRL_PRE_DELAY_US  = 40000;
+    const int KEY_HOLD_US        = 50000;
+    const int KEY_GAP_US         = 40000;
+    const int CTRL_POST_DELAY_US = 40000;
 
-const struct libinput_interface interface = {
-    .open_restricted = open_restricted,
-    .close_restricted = close_restricted
-};
+    // CTRL down
+    emit(uinput_fd, EV_KEY, KEY_LEFTCTRL, 1);
+    emit(uinput_fd, EV_SYN, SYN_REPORT, 0);
+    usleep(CTRL_PRE_DELAY_US);
 
-// -----------------------------
-// Key mapping
-// -----------------------------
-std::unordered_map<std::string, int> key_map = {
-    {"ALT", KEY_RIGHTALT},
-    {"SHIFT", KEY_RIGHTSHIFT},
-    {"LEFTCTRL", KEY_LEFTCTRL},
+    for (int key : sequence) {
+        emit(uinput_fd, EV_KEY, key, 1);
+        emit(uinput_fd, EV_SYN, SYN_REPORT, 0);
 
-    {"0", KEY_0}, {"1", KEY_1}, {"2", KEY_2}, {"3", KEY_3},
-    {"4", KEY_4}, {"5", KEY_5}, {"6", KEY_6}, {"7", KEY_7},
-    {"8", KEY_8}, {"9", KEY_9},
+        usleep(KEY_HOLD_US);
 
-    {"UP", KEY_UP}, {"DOWN", KEY_DOWN}, {"LEFT", KEY_LEFT}, {"RIGHT", KEY_RIGHT}
-};
+        emit(uinput_fd, EV_KEY, key, 0);
+        emit(uinput_fd, EV_SYN, SYN_REPORT, 0);
 
-// -----------------------------
-// Macro settings
-// -----------------------------
-struct MacroSettings {
-    int modifier_hold_ms = 150;
-    int key_hold_ms = 100;
-    int post_release_ms = 80;
-};
-
-MacroSettings load_settings(const std::string& file) {
-    MacroSettings s;
-    std::ifstream f(file);
-    std::string line;
-    while (std::getline(f, line)) {
-        auto pos = line.find('=');
-        if (pos == std::string::npos) continue;
-        std::string key = line.substr(0, pos);
-        int value = std::stoi(line.substr(pos + 1));
-
-        if (key == "ModifierToHold") s.modifier_hold_ms = value;
-        else if (key == "KeyHoldMs") s.key_hold_ms = value;
-        else if (key == "PostRelease") s.post_release_ms = value;
-    }
-    return s;
-}
-
-// -----------------------------
-// Hotkey structures
-// -----------------------------
-struct Hotkey {
-    std::vector<int> modifiers;
-    int trigger_key;
-    std::string descriptor;
-    std::vector<int> macro_sequence;
-    bool active = false;
-};
-
-// -----------------------------
-// CSV loader
-// -----------------------------
-std::vector<Hotkey> load_hotkeys(const std::string& filename) {
-    std::vector<Hotkey> hotkeys;
-    std::ifstream f(filename);
-    std::string line;
-
-    std::getline(f, line); // skip header
-
-    while (std::getline(f, line)) {
-        std::stringstream ss(line);
-        std::string mod_str, trig_str, desc_str, macro_rest;
-
-        std::getline(ss, mod_str, ',');
-        std::getline(ss, trig_str, ',');
-        std::getline(ss, desc_str, ',');
-        std::getline(ss, macro_rest);
-
-        Hotkey hk;
-
-        // parse modifiers
-        std::stringstream ms(mod_str);
-        std::string k;
-        while (std::getline(ms, k, '+')) hk.modifiers.push_back(key_map[k]);
-
-        // trigger key
-        hk.trigger_key = key_map[trig_str];
-
-        // descriptor
-        hk.descriptor = desc_str;
-
-        // macro sequence
-        std::stringstream seq_ss(macro_rest);
-        while (std::getline(seq_ss, k, ',')) hk.macro_sequence.push_back(key_map[k]);
-
-        hotkeys.push_back(hk);
+        usleep(KEY_GAP_US);
     }
 
-    return hotkeys;
+    usleep(CTRL_POST_DELAY_US);
+
+    // CTRL up
+    emit(uinput_fd, EV_KEY, KEY_LEFTCTRL, 0);
+    emit(uinput_fd, EV_SYN, SYN_REPORT, 0);
 }
 
-// -----------------------------
-// uinput setup
-// -----------------------------
-int setup_uinput() {
+// ---------- CONFIG LOADER ----------
+void loadConfig(const std::string& path) {
+    std::ifstream file(path);
+    if (!file) {
+        std::cerr << "Failed to open config file\n";
+        exit(1);
+    }
+
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (line.empty() || line[0] == '#') continue;
+
+        // device=
+        if (line.rfind("device=", 0) == 0) {
+            inputDevice = line.substr(7);
+            continue;
+        }
+
+        // macro F6: UP UP DOWN DOWN, "Resupply"
+        if (line.rfind("macro ", 0) == 0) {
+            std::istringstream iss(line);
+
+            std::string tmp, triggerStr;
+            iss >> tmp;        // macro
+            iss >> triggerStr; // F6:
+
+            if (triggerStr.back() == ':')
+                triggerStr.pop_back();
+
+            if (!keyMap.count(triggerStr)) {
+                std::cerr << "Unknown trigger key: " << triggerStr << "\n";
+                continue;
+            }
+
+            int triggerKey = keyMap[triggerStr];
+
+            std::string rest;
+            std::getline(iss, rest);
+
+            size_t commaPos = rest.find(',');
+
+            std::string seqPart = rest;
+            std::string name = "";
+
+            if (commaPos != std::string::npos) {
+                seqPart = rest.substr(0, commaPos);
+                name = rest.substr(commaPos + 1);
+
+                // trim spaces + quotes
+                size_t firstQuote = name.find('"');
+                size_t lastQuote = name.rfind('"');
+
+                if (firstQuote != std::string::npos &&
+                    lastQuote != std::string::npos &&
+                    lastQuote > firstQuote) {
+
+                    name = name.substr(firstQuote + 1,
+                                       lastQuote - firstQuote - 1);
+                }
+            }
+
+            std::istringstream seqStream(seqPart);
+            std::vector<int> sequence;
+            std::string key;
+
+            while (seqStream >> key) {
+                if (keyMap.count(key)) {
+                    sequence.push_back(keyMap[key]);
+                } else {
+                    std::cerr << "Unknown key: " << key << "\n";
+                }
+            }
+
+            macros[triggerKey] = Macro{sequence, name};
+        }
+    }
+
+    if (inputDevice.empty()) {
+        std::cerr << "No input device specified\n";
+        exit(1);
+    }
+
+    std::cout << "Loaded device: " << inputDevice << "\n";
+
+    for (auto& [k, m] : macros) {
+        std::cout << "Macro loaded: "
+                  << (m.name.empty() ? std::to_string(k) : m.name)
+                  << " (" << m.sequence.size() << " steps)\n";
+    }
+}
+
+// ---------- UINPUT ----------
+int setupUinput() {
     int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
+    if (fd < 0) {
+        perror("uinput open");
+        exit(1);
+    }
 
     ioctl(fd, UI_SET_EVBIT, EV_KEY);
-    for (int i = 0; i < 256; i++) ioctl(fd, UI_SET_KEYBIT, i);
 
-    struct uinput_setup us{};
-    us.id.bustype = BUS_USB;
-    us.id.vendor = 0x1234;
-    us.id.product = 0x5678;
-    strcpy(us.name, "virtual-keyboard");
+    ioctl(fd, UI_SET_KEYBIT, KEY_LEFTCTRL);
+    ioctl(fd, UI_SET_KEYBIT, KEY_UP);
+    ioctl(fd, UI_SET_KEYBIT, KEY_DOWN);
+    ioctl(fd, UI_SET_KEYBIT, KEY_LEFT);
+    ioctl(fd, UI_SET_KEYBIT, KEY_RIGHT);
 
-    ioctl(fd, UI_DEV_SETUP, &us);
+    uinput_setup usetup{};
+    usetup.id.bustype = BUS_USB;
+    usetup.id.vendor  = 0x1234;
+    usetup.id.product = 0x5678;
+    strcpy(usetup.name, "Macro Device");
+
+    ioctl(fd, UI_DEV_SETUP, &usetup);
     ioctl(fd, UI_DEV_CREATE);
+
     sleep(1);
     return fd;
 }
 
-// -----------------------------
-// Send key event
-// -----------------------------
-void send_key(int fd, int key, int val) {
-    struct input_event ev{};
-    ev.type = EV_KEY;
-    ev.code = key;
-    ev.value = val;
-    write(fd, &ev, sizeof(ev));
+// ---------- MAIN ----------
+int main() {
+    loadConfig("config.txt");
 
-    ev.type = EV_SYN;
-    ev.code = SYN_REPORT;
-    ev.value = 0;
-    write(fd, &ev, sizeof(ev));
-}
-
-// -----------------------------
-// Play macro with optional modifier hold
-// -----------------------------
-void play_macro(int fd, const std::vector<int>& macro, const MacroSettings& s) {
-    if (s.modifier_hold_ms > 0) send_key(fd, KEY_LEFTCTRL, 1);
-
-    for (auto key : macro) {
-        send_key(fd, key, 1);
-        std::this_thread::sleep_for(std::chrono::milliseconds(s.key_hold_ms));
-        send_key(fd, key, 0);
-        std::this_thread::sleep_for(std::chrono::milliseconds(s.post_release_ms));
+    int input_fd = open(inputDevice.c_str(), O_RDONLY);
+    if (input_fd < 0) {
+        perror("input device");
+        return 1;
     }
 
-    if (s.modifier_hold_ms > 0) send_key(fd, KEY_LEFTCTRL, 0);
-}
+    int uinput_fd = setupUinput();
 
-// -----------------------------
-int main() {
-    auto hotkeys = load_hotkeys("hotkeys.csv");
-    auto settings = load_settings("settings.cfg");
-    int uinput_fd = setup_uinput();
+    std::cout << "Listening...\n";
 
-    struct udev *udev = udev_new();
-    struct libinput *li = libinput_udev_create_context(&interface, nullptr, udev);
-    libinput_udev_assign_seat(li, "seat0");
-
-    // xkb setup (optional, for key names/printing)
-    struct xkb_context *ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-    struct xkb_rule_names names{};
-    names.rules  = getenv("XKB_DEFAULT_RULES");
-    names.model  = getenv("XKB_DEFAULT_MODEL");
-    names.layout = getenv("XKB_DEFAULT_LAYOUT");
-    names.variant = getenv("XKB_DEFAULT_VARIANT");
-    names.options = getenv("XKB_DEFAULT_OPTIONS");
-
-    if (!names.rules)  names.rules  = "evdev";
-    if (!names.model)  names.model  = "pc105";
-    if (!names.layout) names.layout = "us";
-    if (!names.variant) names.variant = "";
-    if (!names.options) names.options = "";
-
-    struct xkb_keymap *keymap = xkb_keymap_new_from_names(ctx, &names, XKB_KEYMAP_COMPILE_NO_FLAGS);
-    struct xkb_state *state = xkb_state_new(keymap);
-
-    std::unordered_set<uint32_t> pressed_keys;
-
-    std::cout << "Hotkey listener running...\n";
+    input_event ev;
 
     while (true) {
-        libinput_dispatch(li);
+        ssize_t n = read(input_fd, &ev, sizeof(ev));
+        if (n != sizeof(ev)) continue;
 
-        struct libinput_event *event;
-        while ((event = libinput_get_event(li)) != nullptr) {
-            if (libinput_event_get_type(event) == LIBINPUT_EVENT_KEYBOARD_KEY) {
-                auto *kb = libinput_event_get_keyboard_event(event);
-                uint32_t code = libinput_event_keyboard_get_key(kb);
-                uint32_t keycode = code + 8;
-                auto state_key = libinput_event_keyboard_get_key_state(kb);
+        if (ev.type == EV_KEY && ev.value == 1) {
 
-                if (state_key == LIBINPUT_KEY_STATE_PRESSED) {
-                    pressed_keys.insert(code);
-                    xkb_state_update_key(state, keycode, XKB_KEY_DOWN);
-                } else {
-                    pressed_keys.erase(code);
-                    xkb_state_update_key(state, keycode, XKB_KEY_UP);
-                }
+            auto it = macros.find(ev.code);
 
-                // Hotkey detection
-                for (auto& hk : hotkeys) {
-                    bool match = true;
-                    for (int m : hk.modifiers) if (!pressed_keys.count(m)) { match = false; break; }
-                    if (!pressed_keys.count(hk.trigger_key)) match = false;
+            if (it != macros.end()) {
+                std::string name =
+                    it->second.name.empty()
+                        ? std::to_string(ev.code)
+                        : it->second.name;
 
-                    if (match && !hk.active) {
-                        hk.active = true;
-                        std::cout << "🔥 HOTKEY DETECTED: " << hk.descriptor << "\n";
-                        std::thread(play_macro, uinput_fd, hk.macro_sequence, settings).detach();
-                    }
-                    if (!match) hk.active = false;
-                }
+                std::cout << "Trigger: " << name << "\n";
+
+                std::thread([=]() {
+                    playMacro(uinput_fd, it->second.sequence);
+                }).detach();
             }
-
-            libinput_event_destroy(event);
         }
-
-        usleep(1000);
     }
 
+    close(input_fd);
+    close(uinput_fd);
     return 0;
 }
-
