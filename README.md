@@ -66,13 +66,16 @@ Linux kernel with input subsystem enabled
 Access to:
 /dev/input/event*
 /dev/uinput
-
+```
 
 🔐 Permissions setup
-Option 1 (quick test)
-sudo ./Helldivers2Hotkey2
-Option 2 (recommended)
 
+Option 1 (quick test)
+```bash
+sudo ./Helldivers2Hotkey2
+```
+
+Option 2 (recommended)
 
 Permissions:
 
@@ -84,13 +87,15 @@ sudo chmod 666 /dev/uinput
 or
 
 Create udev rules:
-
+```bash
 sudo nano /etc/udev/rules.d/99-uinput.rules
-
+```
 Add:
 
+```bash
 KERNEL=="uinput", MODE="0660", GROUP="input"
 KERNEL=="event*", MODE="0660", GROUP="input"
+```
 
 Add user to input group:
 
@@ -119,7 +124,7 @@ device=/dev/input/by-id/usb-413c_Dell_KB216_Wired_Keyboard-event-kbd
 
 Create a file named config.txt:
 
-...
+```config.txt
 # keyboard device
 device=/dev/input/event3
 
@@ -130,7 +135,7 @@ macro F8: DOWN UP RIGHT RIGHT UP, "F8 - SA/MG-43 Machine Sentry"
 macro F9: DOWN UP RIGHT RIGHT DOWN, "F9 - A/M-12 Mortar Sentry"
 macro F10: DOWN DOWN UP RIGHT, "F10 - Resupply"
 macro F11: RIGHT DOWN LEFT UP UP, "F11 - Orbital Gatling Barrage"
-...
+```
 
 
 Format
@@ -147,9 +152,12 @@ g++ -O2 -std=c++17 Helldivers2Hotkey2.cpp -o Helldivers2Hotkey2
 
 
 ▶️ Run
+```bash
 ./Helldivers2Hotkey2
+```
 
 🖥️ Example output
+```bash
 Loaded device: /dev/input/event3
 Macro loaded: F6 - AX/AR-23 Guard Dog (6 steps)
 Macro loaded: F7 - EAST-17 Expendable Anti-Tank (5 steps)
@@ -161,30 +169,26 @@ Macro loaded: F11 - Orbital Gatling Barrage (5 steps)
 Listening...
 Trigger: F10 - Resupply
 Trigger: F8 - SA/MG-43 Machine Sentry
-
+```
 
 
 ⚠️ Notes
-Works on Wayland via kernel-level input injection (uinput)
-Some sandboxed applications (Flatpak/Snap) may ignore synthetic input
-Anti-cheat systems in games may block or flag injected input
-Requires access to raw input devices (/dev/input/event*)
+* Works on Wayland via kernel-level input injection (uinput)
+* Some sandboxed applications (Flatpak/Snap) may ignore synthetic input
+* Anti-cheat systems in games may block or flag injected input
+* Requires access to raw input devices (/dev/input/event*)
 
 🧩 Limitations
-No GUI (CLI only)
-No hot-reload (restart required for config changes)
-No global hotkey interception via Wayland (by design)
-Device must be manually selected
+* No GUI (CLI only)
+* No hot-reload (restart required for config changes)
+* No global hotkey interception via Wayland (by design)
+* Device must be manually selected
 
 🔮 Future ideas
-JSON/TOML config support
-Sequence-based triggers (no F-keys required)
-GUI frontend (ImGui / Qt)
-Macro recording mode
-Multi-device support
+* Pending
 
 🤝 Contributing
-Contributions are welcome.
+*Contributions are welcome.
 
 📜 License
 

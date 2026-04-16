@@ -1,4 +1,4 @@
-# keyboard device
+# keyboard device (ls -l /dev/input/by-id/)
 device=/dev/input/event3
 
 # macros
