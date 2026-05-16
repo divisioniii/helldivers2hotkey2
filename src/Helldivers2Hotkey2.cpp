@@ -105,7 +105,7 @@ void loadConfig(const std::string& path) {
                 triggerStr.pop_back();
 
             if (!keyMap.count(triggerStr)) {
-                std::cerr << "Unknown trigger key: " << triggerStr << "\n";
+                std::cerr << "Unknown trigger key: " << triggerStr << "             \r";
                 continue;
             }
 
@@ -144,7 +144,7 @@ void loadConfig(const std::string& path) {
                 if (keyMap.count(key)) {
                     sequence.push_back(keyMap[key]);
                 } else {
-                    std::cerr << "Unknown key: " << key << "\n";
+                    std::cerr << "Unknown key: " << key << "              \r";
                 }
             }
 
@@ -162,7 +162,7 @@ void loadConfig(const std::string& path) {
     for (auto& [k, m] : macros) {
         std::cout << "Macro loaded: "
                   << (m.name.empty() ? std::to_string(k) : m.name)
-                  << " (" << m.sequence.size() << " steps)\n";
+                  << " (" << m.sequence.size() << " steps)             \n";
     }
 }
 
@@ -225,7 +225,7 @@ int main() {
                         ? std::to_string(ev.code)
                         : it->second.name;
 
-                std::cout << "Trigger: " << name << "\n";
+                std::cout << "\rTrigger: " << name << "                    " << std::flush;
 
                 std::thread([=]() {
                     playMacro(uinput_fd, it->second.sequence);
